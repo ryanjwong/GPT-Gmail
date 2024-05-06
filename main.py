@@ -113,8 +113,8 @@ def main():
             summaries.append(summary)
     except Exception as e:
         print('Error parsing', e)
-    # for summary in summaries:
-    #     print(summary + '\n')
+    for summary in summaries:
+         print(summary + '\n')
 
 
 if __name__ == '__main__':
