@@ -1,6 +1,7 @@
 import base64
 import json
 import re
+from collections import defaultdict
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -71,11 +72,11 @@ def fetch_emails(service):
     results = service.users().messages().list(userId='me', q="after:2024/05/05").execute()
     messages = results.get('messages', [])
 
-    emails = {}
+    emails = defaultdict(list)
     for message in messages:
         msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
         if 'labelIds' in msg:
-            if 'CATEGORY_PERSONAL' in msg['labelIds']:
+            if 'CATEGORY_PERSONAL' in msg['labelIds'] and 'SENT' not in msg['labelIds']:
                 payload = msg['payload']
                 subject = ''
                 if 'headers' in payload:
@@ -90,18 +91,19 @@ def fetch_emails(service):
                     for part in payload['parts']:
                         if part['mimeType'] == 'text/plain':
                             data = part['body'].get('data')
-                            emails[subject] = (base64.urlsafe_b64decode(data).decode('utf-8'))
+                            emails[subject].append((base64.urlsafe_b64decode(data).decode('utf-8')))
                             break
                         elif 'parts' in part:
                             for part2 in part['parts']:
                                 if part2['mimeType'] == 'text/plain':
                                     data = part2['body'].get('data')
-                                    emails[subject] = (base64.urlsafe_b64decode(data).decode('utf-8'))
+                                    emails[subject].append((base64.urlsafe_b64decode(data).decode('utf-8')))
                                     break
                 elif 'mimeType' in payload:
                     if part['mimeType'] == 'text/plain':
                         data = part['body'].get('data')
-                        emails[subject] = (base64.urlsafe_b64decode(data).decode('utf-8'))
+                        emails[subject].append((base64.urlsafe_b64decode(data).decode('utf-8')))
+                
     return emails
 
 def summarize_text(text):
@@ -152,19 +154,20 @@ def save_to_markdown(text_array, file_path):
         # Write each string in the array to the file on a new line
          for index, subject in enumerate(text_array, start=1):
             file.write(f"{index}. {subject}:\n")
-            file.write(f"{text_array[subject]}\n\n")
+            for text in text_array[subject]:
+                file.write(f"{text}\n\n")
 
 def main():
     service = get_gmail_service()
     emails = fetch_emails(service)
-    summaries = {}
+    summaries = defaultdict(list)
     try:
         for subject in emails:
-            
-            summary = summarize_text(emails[subject])['choices'][0]['message']['content']
+            for text in emails[subject]:
+                summary = summarize_text(text)['choices'][0]['message']['content']
             #summary = summarize(email, 10)
             
-            summaries[subject] = summary
+                summaries[subject].append(summary)
     except Exception as e:
         print('Error parsing', e)
     save_to_markdown(summaries, './out.md')
