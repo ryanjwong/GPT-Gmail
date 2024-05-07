@@ -12,6 +12,33 @@ load_dotenv()
 
 import sys
 
+def append_json_to_file(data, file_path):
+    """
+    Append JSON data to a JSON file. If the file does not exist, create a new file.
+
+    Parameters:
+        data (dict): JSON data to append.
+        file_path (str): The path to the JSON file.
+    """
+    # Check if the file exists
+    if os.path.exists(file_path):
+        # Read the existing data
+        with open(file_path, 'r', encoding='utf-8') as file:
+            # Load existing data into a dictionary
+            file_data = json.load(file)
+            # Append new data
+            if isinstance(file_data, list):
+                file_data.append(data)
+            elif isinstance(file_data, dict):
+                file_data.update(data)
+    else:
+        # Create a new list with the new data if file does not exist
+        file_data = [data]
+
+    # Write the updated data back to the file
+    with open(file_path, 'w', encoding='utf-8') as file:
+        json.dump(file_data, file, indent=4)
+
 # If modifying these SCOPES, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
@@ -41,21 +68,28 @@ def get_gmail_service():
 def fetch_emails(service):
     """Fetches emails from the Gmail API."""
     # Call the Gmail API to fetch INBOX
-    results = service.users().messages().list(userId='me', q="after:2024/05/06", maxResults="25").execute()
+    results = service.users().messages().list(userId='me', q="after:2024/05/06").execute()
     messages = results.get('messages', [])
 
     emails = []
     for message in messages:
         msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
         if 'labelIds' in msg:
-            if 'INBOX' in msg['labelIds']:
+            if 'CATEGORY_PERSONAL' in msg['labelIds']:
                 payload = msg['payload']
+                append_json_to_file(payload, './out.json')
                 if 'parts' in payload:
                     for part in payload['parts']:
                         if part['mimeType'] == 'text/plain':
                             data = part['body'].get('data')
                             emails.append(base64.urlsafe_b64decode(data).decode('utf-8'))
                             break
+                        elif 'parts' in part:
+                            for part2 in part['parts']:
+                                if part2['mimeType'] == 'text/plain':
+                                    data = part2['body'].get('data')
+                                    emails.append(base64.urlsafe_b64decode(data).decode('utf-8'))
+                                    break
                 elif 'mimeType' in payload:
                     if part['mimeType'] == 'text/plain':
                         data = part['body'].get('data')
@@ -78,7 +112,7 @@ def summarize_text(text):
     response = requests.post(api_url, headers=headers, data=json.dumps(data))
     return response.json()
 
-def summarize(transcript, percent=50):
+def summarize(transcript, percent):
     if percent == 100:
         return transcript
 
@@ -108,8 +142,8 @@ def save_to_markdown(text_array, file_path):
     # Open the file in write mode
     with open(file_path, 'w', encoding='utf-8') as file:
         # Write each string in the array to the file on a new line
-        for text in text_array:
-            file.write(text + '\n\n')
+         for index, text in enumerate(text_array, start=1):
+            file.write(f"{index}. {text}\n\n")
 
 def main():
     service = get_gmail_service()
@@ -117,7 +151,7 @@ def main():
     summaries = []
     try:
         for email in emails:
-            summary = summarize(email, 50)
+            summary = summarize(email, 20)
             summaries.append(summary)
     except Exception as e:
         print('Error parsing', e)
