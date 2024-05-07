@@ -47,18 +47,19 @@ def fetch_emails(service):
     emails = []
     for message in messages:
         msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
-        if 'INBOX' in msg['labelIds']:
-            payload = msg['payload']
-            if 'parts' in payload:
-                for part in payload['parts']:
+        if 'labelIds' in msg:
+            if 'INBOX' in msg['labelIds']:
+                payload = msg['payload']
+                if 'parts' in payload:
+                    for part in payload['parts']:
+                        if part['mimeType'] == 'text/plain':
+                            data = part['body'].get('data')
+                            emails.append(base64.urlsafe_b64decode(data).decode('utf-8'))
+                            break
+                elif 'mimeType' in payload:
                     if part['mimeType'] == 'text/plain':
                         data = part['body'].get('data')
                         emails.append(base64.urlsafe_b64decode(data).decode('utf-8'))
-                        break
-            elif 'mimeType' in payload:
-                if part['mimeType'] == 'text/plain':
-                    data = part['body'].get('data')
-                    emails.append(base64.urlsafe_b64decode(data).decode('utf-8'))
     return emails
 
 def summarize_text(text):
@@ -100,8 +101,15 @@ def summarize(transcript, percent=50):
         raise ValueError(response.json()['msg'])
 
     summarized_transcript = response.json()['summary']
-    print(response.json())
     return summarized_transcript
+
+# Function to save an array of text to a markdown file
+def save_to_markdown(text_array, file_path):
+    # Open the file in write mode
+    with open(file_path, 'w', encoding='utf-8') as file:
+        # Write each string in the array to the file on a new line
+        for text in text_array:
+            file.write(text + '\n\n')
 
 def main():
     service = get_gmail_service()
@@ -113,8 +121,7 @@ def main():
             summaries.append(summary)
     except Exception as e:
         print('Error parsing', e)
-    for summary in summaries:
-         print(summary + '\n')
+    save_to_markdown(summaries, './out.md')
 
 
 if __name__ == '__main__':
