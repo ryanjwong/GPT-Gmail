@@ -68,32 +68,40 @@ def get_gmail_service():
 def fetch_emails(service):
     """Fetches emails from the Gmail API."""
     # Call the Gmail API to fetch INBOX
-    results = service.users().messages().list(userId='me', q="after:2024/05/06").execute()
+    results = service.users().messages().list(userId='me', q="after:2024/05/05").execute()
     messages = results.get('messages', [])
 
-    emails = []
+    emails = {}
     for message in messages:
         msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
         if 'labelIds' in msg:
             if 'CATEGORY_PERSONAL' in msg['labelIds']:
                 payload = msg['payload']
+                subject = ''
+                if 'headers' in payload:
+                    for header in payload['headers']:
+                        if header['name'] == 'Subject':
+                            subject = header['value']
+                            break
+                else:
+                    continue
                 append_json_to_file(payload, './out.json')
                 if 'parts' in payload:
                     for part in payload['parts']:
                         if part['mimeType'] == 'text/plain':
                             data = part['body'].get('data')
-                            emails.append(base64.urlsafe_b64decode(data).decode('utf-8'))
+                            emails[subject] = (base64.urlsafe_b64decode(data).decode('utf-8'))
                             break
                         elif 'parts' in part:
                             for part2 in part['parts']:
                                 if part2['mimeType'] == 'text/plain':
                                     data = part2['body'].get('data')
-                                    emails.append(base64.urlsafe_b64decode(data).decode('utf-8'))
+                                    emails[subject] = (base64.urlsafe_b64decode(data).decode('utf-8'))
                                     break
                 elif 'mimeType' in payload:
                     if part['mimeType'] == 'text/plain':
                         data = part['body'].get('data')
-                        emails.append(base64.urlsafe_b64decode(data).decode('utf-8'))
+                        emails[subject] = (base64.urlsafe_b64decode(data).decode('utf-8'))
     return emails
 
 def summarize_text(text):
@@ -107,7 +115,7 @@ def summarize_text(text):
     }
     data = {
         'model' : 'gpt-3.5-turbo',
-        'messages': [{"role": "user", "content": 'Summarize the following email concisely in one sentence: ' + text}],
+        'messages': [{"role": "user", "content": 'Summarize the following email concisely in one to two sentences, leave key details in: ' + text}],
     }
     response = requests.post(api_url, headers=headers, data=json.dumps(data))
     return response.json()
@@ -142,17 +150,21 @@ def save_to_markdown(text_array, file_path):
     # Open the file in write mode
     with open(file_path, 'w', encoding='utf-8') as file:
         # Write each string in the array to the file on a new line
-         for index, text in enumerate(text_array, start=1):
-            file.write(f"{index}. {text}\n\n")
+         for index, subject in enumerate(text_array, start=1):
+            file.write(f"{index}. {subject}:\n")
+            file.write(f"{text_array[subject]}\n\n")
 
 def main():
     service = get_gmail_service()
     emails = fetch_emails(service)
-    summaries = []
+    summaries = {}
     try:
-        for email in emails:
-            summary = summarize(email, 20)
-            summaries.append(summary)
+        for subject in emails:
+            
+            summary = summarize_text(emails[subject])['choices'][0]['message']['content']
+            #summary = summarize(email, 10)
+            
+            summaries[subject] = summary
     except Exception as e:
         print('Error parsing', e)
     save_to_markdown(summaries, './out.md')
