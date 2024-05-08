@@ -102,6 +102,7 @@ def fetch_emails(service):
                     if part['mimeType'] == 'text/plain':
                         data = part['body'].get('data')
                         emails[subject].append((base64.urlsafe_b64decode(data).decode('utf-8')))
+                        break
                 
     return emails
 
