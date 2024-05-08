@@ -153,7 +153,7 @@ def save_to_markdown(text_array, file_path):
     with open(file_path, 'w', encoding='utf-8') as file:
         # Write each string in the array to the file on a new line
          for index, subject in enumerate(text_array, start=1):
-            file.write(f"{index}. {subject}:\n\n")
+            file.write(f"# {index}. {subject}:\n\n")
             for text in text_array[subject]:
                 file.write(f"{text}\n\n")
 
