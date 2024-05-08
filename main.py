@@ -69,14 +69,14 @@ def get_gmail_service():
 def fetch_emails(service):
     """Fetches emails from the Gmail API."""
     # Call the Gmail API to fetch INBOX
-    results = service.users().messages().list(userId='me', q="after:2024/05/05").execute()
+    results = service.users().messages().list(userId='me', q='after:2024/05/07').execute()
     messages = results.get('messages', [])
 
     emails = defaultdict(list)
     for message in messages:
         msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
         if 'labelIds' in msg:
-            if 'CATEGORY_PERSONAL' in msg['labelIds'] and 'SENT' not in msg['labelIds']:
+            if 'INBOX' in msg['labelIds']:
                 payload = msg['payload']
                 subject = ''
                 if 'headers' in payload:
@@ -86,7 +86,6 @@ def fetch_emails(service):
                             break
                 else:
                     continue
-                append_json_to_file(payload, './out.json')
                 if 'parts' in payload:
                     for part in payload['parts']:
                         if part['mimeType'] == 'text/plain':
@@ -117,7 +116,7 @@ def summarize_text(text):
     }
     data = {
         'model' : 'gpt-3.5-turbo',
-        'messages': [{"role": "user", "content": 'Summarize the following email concisely in one to two sentences, leave key details in: ' + text}],
+        'messages': [{"role": "user", "content": 'Summarize the following email concisely in one to two sentences, leave key details in and preserve names especially: ' + text}],
     }
     response = requests.post(api_url, headers=headers, data=json.dumps(data))
     return response.json()
@@ -154,8 +153,8 @@ def save_to_markdown(text_array, file_path):
         # Write each string in the array to the file on a new line
          for index, subject in enumerate(text_array, start=1):
             file.write(f"# {index}. {subject}:\n\n")
-            for text in text_array[subject]:
-                file.write(f"{text}\n\n")
+            for point, text in enumerate(text_array[subject], start=1):
+                file.write(f"{point}. {text}\n\n")
 
 def main():
     service = get_gmail_service()
@@ -164,10 +163,14 @@ def main():
     try:
         for subject in emails:
             for text in emails[subject]:
-                summary = summarize_text(text)['choices'][0]['message']['content']
+                try:
+                    summary = summarize_text(text)['choices'][0]['message']['content']
             #summary = summarize(email, 10)
             
-                summaries[subject].append(summary)
+                    summaries[subject].append(summary)
+                except Exception as e:
+                    print(e)
+                    continue
     except Exception as e:
         print('Error parsing', e)
     save_to_markdown(summaries, './out.md')
