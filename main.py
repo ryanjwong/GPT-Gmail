@@ -76,7 +76,7 @@ def fetch_emails(service):
     for message in messages:
         msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
         if 'labelIds' in msg:
-            if 'INBOX' in msg['labelIds']:
+            if 'INBOX' in msg['labelIds'] and 'CATEGORY_PROMOTIONS' not in msg['labelIds'] and 'CATEGORY_SOCIAL' not in msg['labelIds']:
                 payload = msg['payload']
                 subject = ''
                 if 'headers' in payload:
