@@ -13,6 +13,8 @@ load_dotenv()
 
 import sys
 
+#TODO: Token counter, interact with api, usability by any user, expand user interface through CLI
+
 def append_json_to_file(data, file_path):
     """
     Append JSON data to a JSON file. If the file does not exist, create a new file.
@@ -69,7 +71,7 @@ def get_gmail_service():
 def fetch_emails(service):
     """Fetches emails from the Gmail API."""
     # Call the Gmail API to fetch INBOX
-    results = service.users().messages().list(userId='me', q='after:2024/05/07').execute()
+    results = service.users().messages().list(userId='me', q='after:2024/05/15').execute()
     messages = results.get('messages', [])
 
     emails = defaultdict(list)
@@ -99,8 +101,8 @@ def fetch_emails(service):
                                     emails[subject].append((base64.urlsafe_b64decode(data).decode('utf-8')))
                                     break
                 elif 'mimeType' in payload:
-                    if part['mimeType'] == 'text/plain':
-                        data = part['body'].get('data')
+                    if payload['mimeType'] == 'text/plain':
+                        data = payload['body'].get('data')
                         emails[subject].append((base64.urlsafe_b64decode(data).decode('utf-8')))
                         
                 
