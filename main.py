@@ -1,6 +1,7 @@
 import base64
 import json
 import re
+import tiktoken
 from collections import defaultdict
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -159,24 +160,39 @@ def save_to_markdown(text_array, file_path):
             for point, text in enumerate(text_array[subject], start=1):
                 file.write(f"{point}. {text}\n\n")
 
+def num_tokens_from_string(string: str, model: str) -> int:
+    """Returns the number of tokens in a text string."""
+    encoding = tiktoken.encoding_for_model(model)
+    num_tokens = len(encoding.encode(string))
+    return num_tokens
+
 def main():
     service = get_gmail_service()
     emails = fetch_emails(service)
     summaries = defaultdict(list)
-    try:
-        for subject in emails:
+    total = ''
+    for subject in emails:
             for text in emails[subject]:
-                try:
-                    summary = summarize_text(text)['choices'][0]['message']['content']
-            #summary = summarize(email, 10)
-            
-                    summaries[subject].append(summary)
-                except Exception as e:
-                    print(e)
-                    continue
-    except Exception as e:
-        print('Error parsing', e)
-    save_to_markdown(summaries, './out.md')
+                total += text
+
+    price = num_tokens_from_string(total, "gpt-3.5-turbo")/1000000.00 * 0.5
+    response = input(f'Total will cost: ${price}, proceed? ').lower()
+    print()
+    if response == 'y' or response == 'yes':
+        try:
+            for subject in emails:
+                for text in emails[subject]:
+                    try:
+                        summary = summarize_text(text)['choices'][0]['message']['content']
+                #summary = summarize(email, 10)
+                
+                        summaries[subject].append(summary)
+                    except Exception as e:
+                        print(e)
+                        continue
+        except Exception as e:
+            print('Error parsing', e)
+        save_to_markdown(summaries, './out.md')
 
 
 if __name__ == '__main__':
