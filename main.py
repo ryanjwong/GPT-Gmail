@@ -177,7 +177,6 @@ def main():
 
     price = num_tokens_from_string(total, "gpt-3.5-turbo")/1000000.00 * 0.5
     response = input(f'Total will cost: ${price}, proceed? ').lower()
-    print()
     if response == 'y' or response == 'yes':
         try:
             for subject in emails:
