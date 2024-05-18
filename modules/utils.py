@@ -1,9 +1,7 @@
 import json
 import os
-from dotenv import load_dotenv
 import tiktoken
 
-load_dotenv()
 
 def append_json_to_file(data, file_path):
     """
