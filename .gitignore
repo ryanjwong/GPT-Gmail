@@ -4,3 +4,6 @@ out.md
 out.json
 profiles/*
 !profiles/
+output/*
+!output/
+__pycache__
