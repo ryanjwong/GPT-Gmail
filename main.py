@@ -1,5 +1,6 @@
 import sys
 sys.path.append('modules')
+
 from modules.prompt import logic
 
 def main():
