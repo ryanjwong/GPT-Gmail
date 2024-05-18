@@ -46,4 +46,4 @@ def num_tokens_from_string(string: str, model: str) -> int:
     return num_tokens
 
 def calculate_cost(total):
-    return num_tokens_from_string(total, "gpt-3.5-turbo") / 1000000.00 * 0.5
+    return round(num_tokens_from_string(total, "gpt-3.5-turbo") / 1000000.00 * 0.5, 3)

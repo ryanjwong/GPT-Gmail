@@ -26,7 +26,15 @@ def select_profile():
     profiles = 'profiles'
     for profile in os.listdir(profiles):
         print(profile.replace('.json', ''))
-    profile_name = get_profile_name()
+    valid = False
+    while not valid:
+        profile_name = get_profile_name()
+        path = os.getenv('PROFILES_PATH')
+        profile_path = path + '/' + profile_name + '.json'
+        if not os.path.exists(profile_path):
+            print(f'{profile_name} does not exist! Select an existing one.')
+        else:
+            valid = True            
     print()
     return profile_name
 
