@@ -120,8 +120,8 @@ def logic():
     profile_name = ''
     prompt = """1. Create a profile
 2. Select a profile
-3. Summarize emails
-4. Categorize emails
+3. Summarize today's emails
+4. Categorize today's emails
 5. Exit
 Please select an option: """
     while running:
