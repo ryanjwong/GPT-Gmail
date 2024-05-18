@@ -2,4 +2,5 @@
 token.json
 out.md
 out.json
-credentials.json
+profiles/*
+!profiles/

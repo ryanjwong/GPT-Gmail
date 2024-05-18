@@ -11,10 +11,12 @@ import requests
 import os
 from dotenv import load_dotenv
 load_dotenv()
+from datetime import date
+
 
 import sys
 
-#TODO: Token counter, interact with api, usability by any user, expand user interface through CLI
+#TODO: interact with api, usability by any user, expand user interface through CLI
 
 def append_json_to_file(data, file_path):
     """
@@ -46,15 +48,17 @@ def append_json_to_file(data, file_path):
 # If modifying these SCOPES, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
-def get_gmail_service():
+def get_gmail_service(profile_name='ryanjwong007'):
     """Shows basic usage of the Gmail API.
     Returns a Gmail API service object."""
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    path = 'profiles'
+    profile_path = path+'/'+profile_name+'.json'
+    if os.path.exists(profile_path):
+        creds = Credentials.from_authorized_user_file(profile_path, SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -64,7 +68,7 @@ def get_gmail_service():
                 'credentials.json', SCOPES)
             creds = flow.run_local_server(port=3000)
         # Save the credentials for the next run
-        with open('token.json', 'w') as token:
+        with open(profile_path, 'w') as token:
             token.write(creds.to_json())
 
     return build('gmail', 'v1', credentials=creds)
@@ -72,7 +76,10 @@ def get_gmail_service():
 def fetch_emails(service):
     """Fetches emails from the Gmail API."""
     # Call the Gmail API to fetch INBOX
-    results = service.users().messages().list(userId='me', q='after:2024/05/15').execute()
+    today = date.today()
+    d1 = today.strftime("%Y/%m/%d")
+
+    results = service.users().messages().list(userId='me', q='after:'+d1).execute()
     messages = results.get('messages', [])
 
     emails = defaultdict(list)
@@ -105,8 +112,6 @@ def fetch_emails(service):
                     if payload['mimeType'] == 'text/plain':
                         data = payload['body'].get('data')
                         emails[subject].append((base64.urlsafe_b64decode(data).decode('utf-8')))
-                        
-                
     return emails
 
 def summarize_text(text):
@@ -167,32 +172,63 @@ def num_tokens_from_string(string: str, model: str) -> int:
     return num_tokens
 
 def main():
-    service = get_gmail_service()
-    emails = fetch_emails(service)
-    summaries = defaultdict(list)
-    total = ''
-    for subject in emails:
-            for text in emails[subject]:
-                total += text
+    running = True 
+    profile_name = ''
+    prompt = """1. Create a profile
+2. Select a profile
+3. Summarize emails
+4. Exit
+Please select an option: """
 
-    price = num_tokens_from_string(total, "gpt-3.5-turbo")/1000000.00 * 0.5
-    response = input(f'Total will cost: ${price}, proceed? ').lower()
-    if response == 'y' or response == 'yes':
-        try:
-            for subject in emails:
-                for text in emails[subject]:
+    while running:
+        if len(profile_name) != 0:
+            print(f'Current profile: {profile_name}')
+        option = input(prompt)
+        if option == '4':
+            exit()
+        elif option == '1':
+            profile_name = input('Please enter a profile name: ')
+            get_gmail_service(profile_name)
+        elif option == '2':
+            print('Available profiles:')
+            profiles = 'profiles'
+
+            # Loop through the directory
+            for profile in os.listdir(profiles):
+                print(profile.replace('.json', ''))
+            profile_name = input('Please enter a profile name: ')
+        elif option == '3':
+            if len(profile_name) != 0:
+                print('Fetching emails...')
+                service = get_gmail_service(profile_name)
+                emails = fetch_emails(service)
+                summaries = defaultdict(list)
+                total = ''
+                for subject in emails:
+                        for text in emails[subject]:
+                            total += text
+
+                price = num_tokens_from_string(total, "gpt-3.5-turbo")/1000000.00 * 0.5
+                response = input(f'Total will cost: ${price}, proceed? ').lower()
+                if response == 'y' or response == 'yes':
                     try:
-                        summary = summarize_text(text)['choices'][0]['message']['content']
-                #summary = summarize(email, 10)
-                
-                        summaries[subject].append(summary)
+                        print('Summarizing...')
+                        for subject in emails:
+                            for text in emails[subject]:
+                                try:
+                                    summary = summarize_text(text)['choices'][0]['message']['content']
+                            #summary = summarize(email, 10)
+                            
+                                    summaries[subject].append(summary)
+                                except Exception as e:
+                                    print(e)
+                                    continue
                     except Exception as e:
-                        print(e)
-                        continue
-        except Exception as e:
-            print('Error parsing', e)
-        save_to_markdown(summaries, './out.md')
-
-
+                        print('Error parsing', e)
+                    save_to_markdown(summaries, './out.md')
+                    print('Summarizing complete!')
+            else:
+                print('Profile name not selected, please select a profile.')
+        print()
 if __name__ == '__main__':
     main()
