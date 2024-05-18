@@ -70,11 +70,15 @@ def categorize_important(profile_name):
                 except Exception as e:
                     print('Error parsing', e)
                 mark_important(service, important_emails)
-                    
-                print(f'Categorizing complete! Emails:')
-                for email in important_emails:
-                    print(email.subject)
-                print('Have been marked as important.')
+                print()
+                if len(important_emails) > 0:
+                    print(f'Categorizing complete! Emails:')
+                    for email in important_emails:
+                        print(email.subject)
+                    print()
+                    print('Have been marked as important.')
+                else:
+                    print('All relevant emails have already been marked as important.')
     else:
         print('Profile name not selected, please select a profile.')
     print()
@@ -105,6 +109,7 @@ def summarize_emails(profile_name):
             except Exception as e:
                 print('Error parsing', e)
             save_to_markdown(summaries, 'output/'+profile_name+'_'+'emails.md')
+            print()
             print(f'Summarizing complete! Please check: {profile_name}_emails.md')
     else:
         print('Profile name not selected, please select a profile.')
@@ -123,7 +128,7 @@ Please select an option: """
         if len(profile_name) != 0:
             print(f'Current profile: {profile_name}')
         option = input(prompt)
-        
+        print()
         if option == '1':
             profile_name = create_profile()
         elif option == '2':
