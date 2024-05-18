@@ -6,9 +6,11 @@ import os
 import base64
 from collections import defaultdict
 from datetime import date
+from emails import Email
+
 
 # If modifying these SCOPES, delete the file token.json.
-SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+SCOPES = ['https://www.googleapis.com/auth/gmail.modify', 'https://www.googleapis.com/auth/gmail.labels']
 
 def get_gmail_service(profile_name):
     """Shows basic usage of the Gmail API.
@@ -35,43 +37,54 @@ def get_gmail_service(profile_name):
 
     return build('gmail', 'v1', credentials=creds)
 
+def mark_important(service, important_emails):
+    body = {
+        "addLabelIds": [
+            "IMPORTANT"
+        ]
+    }
+    for email in important_emails:
+        result = service.users().messages().modify(userId='me', id=email.id, body = body).execute()
+
+
 def fetch_emails(service):
     """Fetches emails from the Gmail API."""
     # Call the Gmail API to fetch INBOX
     today = date.today()
     d1 = today.strftime("%Y/%m/%d")
 
-    results = service.users().messages().list(userId='me', q='after:' + d1).execute()
+    results = service.users().messages().list(userId='me', q='after:' + d1 + ' category:primary').execute()
     messages = results.get('messages', [])
 
     emails = defaultdict(list)
     for message in messages:
         msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
-        if 'labelIds' in msg:
-            if 'INBOX' in msg['labelIds'] and 'CATEGORY_PROMOTIONS' not in msg['labelIds'] and 'CATEGORY_SOCIAL' not in msg['labelIds']:
-                payload = msg['payload']
-                subject = ''
-                if 'headers' in payload:
-                    for header in payload['headers']:
-                        if header['name'] == 'Subject':
-                            subject = header['value']
+        payload = msg['payload']
+        subject = ''
+        if 'headers' in payload:
+            for header in payload['headers']:
+                if header['name'] == 'Subject':
+                    subject = header['value']
+                    break
+        else:
+            continue
+        if 'parts' in payload:
+            for part in payload['parts']:
+                if part['mimeType'] == 'text/plain':
+                    data = part['body'].get('data')
+                    email = Email(msg['id'], subject, base64.urlsafe_b64decode(data).decode('utf-8'), msg['labelIds'])
+                    emails[subject].append(email)
+                    break
+                elif 'parts' in part:
+                    for part2 in part['parts']:
+                        if part2['mimeType'] == 'text/plain':
+                            data = part2['body'].get('data')
+                            email = Email(msg['id'], subject, base64.urlsafe_b64decode(data).decode('utf-8'), msg['labelIds'])
+                            emails[subject].append(email)
                             break
-                else:
-                    continue
-                if 'parts' in payload:
-                    for part in payload['parts']:
-                        if part['mimeType'] == 'text/plain':
-                            data = part['body'].get('data')
-                            emails[subject].append((base64.urlsafe_b64decode(data).decode('utf-8')))
-                            break
-                        elif 'parts' in part:
-                            for part2 in part['parts']:
-                                if part2['mimeType'] == 'text/plain':
-                                    data = part2['body'].get('data')
-                                    emails[subject].append((base64.urlsafe_b64decode(data).decode('utf-8')))
-                                    break
-                elif 'mimeType' in payload:
-                    if payload['mimeType'] == 'text/plain':
-                        data = payload['body'].get('data')
-                        emails[subject].append((base64.urlsafe_b64decode(data).decode('utf-8')))
+        elif 'mimeType' in payload:
+            if payload['mimeType'] == 'text/plain':
+                data = payload['body'].get('data')
+                email = Email(msg['id'], subject, base64.urlsafe_b64decode(data).decode('utf-8'), msg['labelIds'])
+                emails[subject].append(email)
     return emails
