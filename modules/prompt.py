@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 from gmail_api import get_gmail_service, fetch_emails, mark_important
 from utils import save_to_markdown, calculate_cost
-from summarizer import summarize_text, categorize_text
+from openai_api import summarize_text, categorize_text
 from emails import Email
 
 
@@ -56,7 +56,7 @@ def categorize_important(profile_name):
             response = input(f'Total will cost: ${cost}, proceed? ').lower()
             if response == 'y' or response == 'yes':
                 try:
-                    print('Categorizing...')
+                    print('Categorizing...')        
                     for subject in emails:
                         for email in emails[subject]:
                             try:
