@@ -13,7 +13,7 @@ def summarize_text(text):
     }
     data = {
         'model' : 'gpt-3.5-turbo',
-        'messages': [{"role": "user", "content": 'Summarize the following email concisely in one to two sentences, leave key details in and preserve names especially: ' + text}],
+        'messages': [{"role": "user", "content": 'Summarize the following email concisely in one to two SHORT sentences, leave key details in and preserve names, dates, and links especially: ' + text}],
     }
     response = requests.post(api_url, headers=headers, data=json.dumps(data))
     return response.json()

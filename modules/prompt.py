@@ -110,7 +110,7 @@ def summarize_emails(profile_name):
                 print('Error parsing', e)
             save_to_markdown(summaries, 'output/'+profile_name+'_'+'emails.md')
             print()
-            print(f'Summarizing complete! Please check: {profile_name}_emails.md')
+            #print(f'Summarizing complete! Please check: {profile_name}_emails.md')
     else:
         print('Profile name not selected, please select a profile.')
     print()
