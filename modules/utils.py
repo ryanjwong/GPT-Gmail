@@ -2,6 +2,14 @@ import json
 import os
 import tiktoken
 
+class Colors:
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    BLUE = '\033[94m'
+    MAGENTA = '\033[95m'
+    CYAN = '\033[96m'
+    RESET = '\033[0m'
 
 def append_json_to_file(data, file_path):
     """
@@ -40,7 +48,7 @@ def save_to_markdown(text_array, file_path):
     #             file.write(f"{point}. {text}\n\n")
     print()
     for index, subject in enumerate(text_array, start=1):
-        print(subject+':')
+        print(f'{Colors.BLUE}{subject}:{Colors.RESET}')
         for point, text in enumerate(text_array[subject], start=1):
             print(text)
         print()

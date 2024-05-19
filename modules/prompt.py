@@ -5,6 +5,14 @@ from utils import save_to_markdown, calculate_cost
 from openai_api import summarize_text, categorize_text
 from emails import Email
 
+class Colors:
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    BLUE = '\033[94m'
+    MAGENTA = '\033[95m'
+    CYAN = '\033[96m'
+    RESET = '\033[0m'
 
 def get_profile_name():
     profile_name = input('Please enter a profile name: ')
@@ -74,7 +82,7 @@ def categorize_important(profile_name):
                 if len(important_emails) > 0:
                     print(f'Categorizing complete! Emails:')
                     for email in important_emails:
-                        print(email.subject)
+                        print(f'{Colors.CYAN}{email.subject}{Colors.RESET}')
                     print()
                     print('Have been marked as important.')
                 else:
