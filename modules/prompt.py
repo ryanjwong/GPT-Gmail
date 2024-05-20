@@ -1,3 +1,4 @@
+import json
 import os
 from collections import defaultdict
 from gmail_api import get_gmail_service, fetch_emails, mark_important
@@ -125,7 +126,11 @@ def summarize_emails(profile_name):
     
 def logic():
     running = True 
-    profile_name = ''
+    with open('state.json', 'r') as file:
+        # Load the data from the JSON file
+        state = json.load(file)
+    profile_name = state['currentProfile']
+    
     prompt = """1. Create a profile
 2. Select a profile
 3. Summarize today's emails
@@ -146,4 +151,7 @@ Please select an option: """
         elif option == '4':
             categorize_important(profile_name)
         elif option == '5':
-            running = False         
+            running = False
+        state['currentProfile'] = profile_name
+        with open('state.json', 'w') as file:
+            json.dump(state, file, indent=4)          

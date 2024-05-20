@@ -2,6 +2,7 @@
 token.json
 out.md
 out.json
+state.json
 profiles/*
 !profiles/
 output/*
