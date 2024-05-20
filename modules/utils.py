@@ -39,19 +39,14 @@ def append_json_to_file(data, file_path):
         json.dump(file_data, file, indent=4)
 
 def save_to_markdown(text_array, file_path):
-    # Open the file in write mode
-    # with open(file_path, 'w', encoding='utf-8') as file:
-    #     # Write each string in the array to the file on a new line
-    #      for index, subject in enumerate(text_array, start=1):
-    #         file.write(f"# {index}. {subject}:\n\n")
-    #         for point, text in enumerate(text_array[subject], start=1):
-    #             file.write(f"{point}. {text}\n\n")
-    print()
-    for index, subject in enumerate(text_array, start=1):
-        print(f'{Colors.BLUE}{subject}:{Colors.RESET}')
-        for point, text in enumerate(text_array[subject], start=1):
-            print(text)
-        print()
+    #Open the file in write mode
+    with open(file_path, 'w', encoding='utf-8') as file:
+        # Write each string in the array to the file on a new line
+         for index, subject in enumerate(text_array, start=1):
+            file.write(f"# {index}. {subject}:\n\n")
+            for point, text in enumerate(text_array[subject], start=1):
+                file.write(f"{point}. {text}\n\n")
+    
 def num_tokens_from_string(string: str, model: str) -> int:
     """Returns the number of tokens in a text string."""
     encoding = tiktoken.encoding_for_model(model)

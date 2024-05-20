@@ -81,7 +81,7 @@ def categorize_important(profile_name):
                 mark_important(service, important_emails)
                 print()
                 if len(important_emails) > 0:
-                    print(f'Categorizing complete! Emails:')
+                    print(f'Categorizing complete! Email(s):')
                     for email in important_emails:
                         print(f'{Colors.CYAN}{email.subject}{Colors.RESET}')
                     print()
@@ -95,6 +95,7 @@ def categorize_important(profile_name):
 def summarize_emails(profile_name):
     if len(profile_name) != 0:
         print('Fetching emails...')
+        count = 0
         service = get_gmail_service(profile_name)
         emails = fetch_emails(service)
         summaries = defaultdict(list)
@@ -112,12 +113,20 @@ def summarize_emails(profile_name):
                         try:
                             summary = summarize_text(text.body)['choices'][0]['message']['content']
                             summaries[subject].append(summary)
+                            count +=1
                         except Exception as e:
                             print(e)
                             continue
             except Exception as e:
                 print('Error parsing', e)
-            save_to_markdown(summaries, 'output/'+profile_name+'_'+'emails.md')
+            #save_to_markdown(summaries, 'output/'+profile_name+'_'+'emails.md')
+            print()
+            print(f'Total emails today: {count}')
+            for number, subject in enumerate(summaries, start=1):
+                print(f'{Colors.BLUE}{number}. {subject}:{Colors.RESET}')
+                for text in summaries[subject]:
+                    print(text)
+                print()
             print()
             #print(f'Summarizing complete! Please check: {profile_name}_emails.md')
     else:
