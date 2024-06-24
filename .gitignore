@@ -1,0 +1,11 @@
+.env
+token.json
+out.md
+out.json
+state.json
+credentials.json
+profiles/*
+!profiles/.gitkeep
+output/*
+!output/
+__pycache__
