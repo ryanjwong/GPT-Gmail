@@ -179,7 +179,6 @@ Project Link: [Repo](https://github.com/ryanjwong/GPT-Gmail)
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
-* []() Shoutout to AJ for inspiring me for the idea as well as suggesting feature improvements!
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
